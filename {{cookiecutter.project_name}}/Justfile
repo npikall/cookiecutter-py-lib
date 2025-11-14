@@ -1,35 +1,76 @@
-# Justfile for managing common tasks
-
-# default recipe to display help information
+# Default command lists all available recipes
 _default:
-  @just --list
+    @just --list
 
-# Define variables and paths
-env-file := "env.yml"
-env-name := file_stem(env_var("PWD"))
+alias b := bump
+alias c := clean
+alias d := dist
+alias h := hooks
+alias q := check
+alias t := test
 
-# Placeholder variable for the package manager
-pkg-manager := `if command -v mamba > /dev/null; then echo mamba; else echo conda; fi`
+# clean all python build/compilation files and directories
+clean:
+    find . -name '*.pyc' -exec rm --force {} +
+    find . -name '*.pyo' -exec rm --force {} +
+    find . -name '*~' -exec rm --force {} +
+    rm --force .coverage
+    rm --force --recursive .pytest_cache
+    rm --force --recursive build/
+    rm --force --recursive dist/
+    rm --force --recursive *.egg-info
 
-# Aliases
-alias update := env-update
-alias env := environment
-alias remove := env-remove
+# install dependencies in local venv
+venv:
+    uv sync --group test --group dev
 
-# setup the environment
-@environment:
-    echo "{{GREEN}}Creating environment {{env-name}} from {{env-file}}{{NORMAL}}"
-    {{ pkg-manager }} env create -n {{env-name}} -f {{env-file}}
-    echo "{{GREEN}}Environment has been created{{NORMAL}}"
+# run test with coverage
+test:
+    uv run pytest tests/ -rsx --verbose --color=yes
 
-# update the environment
-@env-update:
-    echo "{{GREEN}}Updating environment {{env-name}} from {{env-file}}{{NORMAL}}"
-    {{ pkg-manager }} env update -n {{env-name}} -f {{env-file}}
-    echo "{{GREEN}}Environment has been updated{{NORMAL}}"
+# lint python code using ruff
+[private]
+lint:
+    uvx ruff check . --fix
 
-# remove the environment
-@env-remove:
-    echo "{{GREEN}}Removing environment {{env-name}}{{NORMAL}}"
-    {{ pkg-manager }} env remove -n {{env-name}} --all --yes
-    echo "{{GREEN}}Environment has been removed{{NORMAL}}"
+# format python code using ruff
+[private]
+format:
+    uvx ruff format .
+
+# run the type checker ty
+[private]
+types:
+    uvx ty check
+
+# lint and format python code (ruff) and run the type checker (ty)
+check: lint format types
+
+# setup the pre-commit hooks
+hooks:
+    uvx pre-commit install
+
+[confirm("Do you really want to bump? (y/n)")]
+[private]
+prompt-confirm:
+
+# bump the version, commit the changes and add a tag (increment can be major, minor, patch,...)
+bump INCREMENT:
+    @uv version --bump {{ INCREMENT }} --dry-run
+    @just prompt-confirm
+    uv version --bump {{ INCREMENT }}
+    git add pyproject.toml
+    git commit -m "Bumped version to `uv version --short`"
+    git tag "v`uv version --short`"
+    @echo "{{ GREEN }}{{ BOLD }}Version has been bumped to `uv version --short`.{{ NORMAL }}"
+
+# build the source distribution and wheel file with uv (bump version first)
+dist:
+    uv build
+
+# initialize a git repo and add all files
+init:
+    git init
+    git add .
+    git commit -m "initial commit"
+    @echo "{{ GREEN }}{{ BOLD }}Git has been initialized{{ NORMAL }}"
