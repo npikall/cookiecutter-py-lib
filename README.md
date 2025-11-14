@@ -1,21 +1,23 @@
 # Cookiecutter Repository
+
 Defines some basic files, which are used in my repositories.
 
-## Installation
+## Useage
 
-Install cookiecutter in your python environment:
-```bash
-pip install cookiecutter
-```
-You can also install source, see the [official installation documentation](https://cookiecutter.readthedocs.io/en/2.1.1/installation.html) of the cookiecutter project.
-
-## Usage
-Now if you want to generate an initial python project skeleton in this style, navigate to the folder which should contain the project root project folder and run this command:
+To initialize a new repository with this `cookiecutter` template run the following command:
 
 ```bash
+# if you have cookiecutter installed
 cookiecutter https://github.com/npikall/cookiecutter-std-repo.git
+
+# or if you are using uv
+uvx cookiecutter https://github.com/npikall/cookiecutter-std-repo.git
 ```
 
-## Dependencies
-The repository uses `justfile` for task automation. To install `just`, visit
-the [official repository](https://github.com/casey/just). Alternatively you could replace the `justfile` with a `Makefile`.
+You will be prompted and then your repo should be setup.
+
+> [!IMPORTANT]
+> The repository uses `justfile` for task automation.
+> To install [Just] , visit the official repository.
+
+[Just]: https://github.com/casey/just
